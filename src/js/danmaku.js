@@ -21,18 +21,11 @@ class Danmaku {
     }
 
     load() {
-        let apiurl;
-        if (this.options.api.maximum) {
-            apiurl = `${this.options.api.address}v3/?id=${this.options.api.id}&max=${this.options.api.maximum}`;
-        } else {
-            apiurl = `${this.options.api.address}v3/?id=${this.options.api.id}`;
-        }
-        const endpoints = (this.options.api.addition || []).slice(0);
-        endpoints.push(apiurl);
-        this.events && this.events.trigger('danmaku_load_start', endpoints);
+        const apiurl = `${this.options.api.address}`;
+        this.events && this.events.trigger('danmaku_load_start', apiurl);
 
-        this._readAllEndpoints(endpoints, (results) => {
-            this.dan = [].concat.apply([], results).sort((a, b) => a.time - b.time);
+        this._readEndpoint(apiurl, (results) => {
+            this.dan = results;
             window.requestAnimationFrame(() => {
                 this.frame();
             });
@@ -53,32 +46,17 @@ class Danmaku {
     /**
      * Asynchronously read danmaku from all API endpoints
      */
-    _readAllEndpoints(endpoints, callback) {
-        const results = [];
-        let readCount = 0;
-
-        for (let i = 0; i < endpoints.length; ++i) {
-            this.options.apiBackend.read({
-                url: endpoints[i],
-                success: (data) => {
-                    results[i] = data;
-
-                    ++readCount;
-                    if (readCount === endpoints.length) {
-                        callback(results);
-                    }
-                },
-                error: (msg) => {
-                    this.options.error(msg || this.options.tran('Danmaku load failed'));
-                    results[i] = [];
-
-                    ++readCount;
-                    if (readCount === endpoints.length) {
-                        callback(results);
-                    }
-                },
-            });
-        }
+    _readEndpoint(apiurl, callback) {
+        this.options.apiBackend.read({
+            url: apiurl,
+            success: (data) => {
+                callback(data);
+            },
+            error: (msg) => {
+                this.options.error(msg || this.options.tran('Danmaku load failed'));
+                callback([]);
+            },
+        });
     }
 
     send(dan, callback) {
