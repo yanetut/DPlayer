@@ -35,6 +35,8 @@ class DPlayer {
     constructor (options) {
         this.options = handleOption(options);
 
+        this.type = 'normal';
+
         if (this.options.video.quality) {
             this.qualityIndex = this.options.video.defaultQuality;
             this.quality = this.options.video.quality[this.options.video.defaultQuality];
@@ -67,6 +69,9 @@ class DPlayer {
         });
 
         this.video = this.template.video;
+
+        this.videos = this.options.videos;
+        this.videoIndex = 0;
 
         this.bar = new Bar(this.template);
 
@@ -130,12 +135,13 @@ class DPlayer {
 
         this.contextmenu = new ContextMenu(this);
 
-        this.initVideo(this.video, this.quality && this.quality.type || this.options.video.type);
+        this.initVideos(this.videos);
+        this.initVideo(this.video);
 
         this.infoPanel = new InfoPanel(this);
 
         if (!this.danmaku && this.options.autoplay) {
-            this.play();
+            this.loadVideo(0);
         }
 
         index++;
@@ -147,8 +153,8 @@ class DPlayer {
     */
     seek (time) {
         time = Math.max(time, 0);
-        if (this.video.duration) {
-            time = Math.min(time, this.video.duration);
+        if (this.videos.duration) {
+            time = Math.min(time, this.videos.duration);
         }
         if (this.video.currentTime < time) {
             this.notice(`${this.tran('FF')} ${(time - this.video.currentTime).toFixed(0)} ${this.tran('s')}`);
@@ -157,13 +163,24 @@ class DPlayer {
             this.notice(`${this.tran('REW')} ${(this.video.currentTime - time).toFixed(0)} ${this.tran('s')}`);
         }
 
-        this.video.currentTime = time;
+        // TODO: algorithm
+        let seekVideoIndex = this.videos.videoList.findIndex((video) => video.seek > time);
+        if (seekVideoIndex === -1) {
+            seekVideoIndex = this.videos.videoList.length;
+        }
+
+        const seekTimeInVideo = time - this.videos.videoList[seekVideoIndex - 1].seek;
+        if (seekVideoIndex - 1 === this.videoIndex) {
+            this.video.currentTime =  seekTimeInVideo;
+        } else {
+            this.loadVideo(seekVideoIndex - 1, seekTimeInVideo);
+        }
 
         if (this.danmaku) {
             this.danmaku.seek();
         }
 
-        this.bar.set('played', time / this.video.duration, 'width');
+        this.bar.set('played', time / this.videos.duration, 'width');
         this.template.ptime.innerHTML = utils.secondToTime(time);
     }
 
@@ -178,11 +195,15 @@ class DPlayer {
 
         this.template.playButton.innerHTML = Icons.pause;
 
-        const playedPromise = Promise.resolve(this.video.play());
-        playedPromise.catch(() => {
-            this.pause();
-        }).then(() => {
-        });
+        if (this.bar.get('played') > 0.999) {
+            this.loadVideo(0);
+        } else {
+            const playedPromise = Promise.resolve(this.video.play());
+            playedPromise.catch(() => {
+                this.pause();
+            }).then(() => {
+            });
+        }
         this.timer.enable('loading');
         this.container.classList.remove('dplayer-paused');
         this.container.classList.add('dplayer-playing');
@@ -288,7 +309,6 @@ class DPlayer {
         this.pause();
         this.video.poster = video.pic ? video.pic : '';
         this.video.src = video.url;
-        this.initMSE(this.video, video.type || 'auto');
         if (danmakuAPI) {
             this.template.danmakuLoading.style.display = 'block';
             this.bar.set('played', 0, 'width');
@@ -308,129 +328,19 @@ class DPlayer {
         }
     }
 
-    initMSE (video, type) {
-        this.type = type;
-        if (this.options.video.customType && this.options.video.customType[type]) {
-            if (Object.prototype.toString.call(this.options.video.customType[type]) === '[object Function]') {
-                this.options.video.customType[type](this.video, this);
-            }
-            else {
-                console.error(`Illegal customType: ${type}`);
-            }
-        }
-        else {
-            if (this.type === 'auto') {
-                if (/m3u8(#|\?|$)/i.exec(video.src)) {
-                    this.type = 'hls';
-                }
-                else if (/.flv(#|\?|$)/i.exec(video.src)) {
-                    this.type = 'flv';
-                }
-                else if (/.mpd(#|\?|$)/i.exec(video.src)) {
-                    this.type = 'dash';
-                }
-                else {
-                    this.type = 'normal';
-                }
-            }
-
-            if (this.type === 'hls' && (video.canPlayType('application/x-mpegURL') || video.canPlayType('application/vnd.apple.mpegURL'))) {
-                this.type = 'normal';
-            }
-
-            switch (this.type) {
-            // https://github.com/video-dev/hls.js
-            case 'hls':
-                if (Hls) {
-                    if (Hls.isSupported()) {
-                        const hls = new Hls();
-                        hls.loadSource(video.src);
-                        hls.attachMedia(video);
-                    }
-                    else {
-                        this.notice('Error: Hls is not supported.');
-                    }
-                }
-                else {
-                    this.notice('Error: Can\'t find Hls.');
-                }
-                break;
-
-            // https://github.com/Bilibili/flv.js
-            case 'flv':
-                if (flvjs && flvjs.isSupported()) {
-                    if (flvjs.isSupported()) {
-                        const flvPlayer = flvjs.createPlayer({
-                            type: 'flv',
-                            url: video.src
-                        });
-                        flvPlayer.attachMediaElement(video);
-                        flvPlayer.load();
-                    }
-                    else {
-                        this.notice('Error: flvjs is not supported.');
-                    }
-                }
-                else {
-                    this.notice('Error: Can\'t find flvjs.');
-                }
-                break;
-
-            // https://github.com/Dash-Industry-Forum/dash.js
-            case 'dash':
-                if (dashjs) {
-                    dashjs.MediaPlayer().create().initialize(video, video.src, false);
-                }
-                else {
-                    this.notice('Error: Can\'t find dashjs.');
-                }
-                break;
-
-            // https://github.com/webtorrent/webtorrent
-            case 'webtorrent':
-                if (WebTorrent) {
-                    if (WebTorrent.WEBRTC_SUPPORT) {
-                        this.container.classList.add('dplayer-loading');
-                        const client = new WebTorrent();
-                        const torrentId = video.src;
-                        client.add(torrentId, (torrent) => {
-                            const file = torrent.files.find((file) => file.name.endsWith('.mp4'));
-                            file.renderTo(this.video, {
-                                autoplay: this.options.autoplay
-                            }, () => {
-                                this.container.classList.remove('dplayer-loading');
-                            });
-                        });
-                    }
-                    else {
-                        this.notice('Error: Webtorrent is not supported.');
-                    }
-                }
-                else {
-                    this.notice('Error: Can\'t find Webtorrent.');
-                }
-                break;
-            }
-        }
+    initVideos (videos) {
+        this.template.dtime.innerHTML = utils.secondToTime(videos.duration);
     }
 
-    initVideo (video, type) {
-        this.initMSE(video, type);
+    initVideo (video) {
 
         /**
          * video events
          */
-        // show video time: the metadata has loaded or changed
-        this.on('durationchange', () => {
-            // compatibility: Android browsers will output 1 or Infinity at first
-            if (video.duration !== 1 && video.duration !== Infinity) {
-                this.template.dtime.innerHTML = utils.secondToTime(video.duration);
-            }
-        });
-
         // show video loaded bar: to inform interested parties of progress downloading the media
         this.on('progress', () => {
-            const percentage = video.buffered.length ? video.buffered.end(video.buffered.length - 1) / video.duration : 0;
+            const seeked = this.videos.videoList[this.videoIndex].seek;
+            const percentage = video.buffered.length ? (seeked +  video.buffered.end(video.buffered.length - 1)) / this.videos.duration : seeked / this.videos.duration;
             this.bar.set('loaded', percentage, 'width');
         });
 
@@ -443,18 +353,12 @@ class DPlayer {
             this.tran && this.notice && this.type !== 'webtorrent' & this.notice(this.tran('Video load failed'), -1);
         });
 
-        // video end
+        // single video end
         this.on('ended', () => {
-            this.bar.set('played', 1, 'width');
-            if (!this.setting.loop) {
-                this.pause();
-            }
-            else {
-                this.seek(0);
-                this.play();
-            }
-            if (this.danmaku) {
-                this.danmaku.danIndex = 0;
+            if (this.videoIndex < this.videos.videoList.length - 1) {
+                this.loadVideo(this.videoIndex + 1);
+            } else {
+                this.bar.set('played', 1, 'width');
             }
         });
 
@@ -471,8 +375,9 @@ class DPlayer {
         });
 
         this.on('timeupdate', () => {
-            this.bar.set('played', this.video.currentTime / this.video.duration, 'width');
-            const currentTime = utils.secondToTime(this.video.currentTime);
+            const prevTime = this.videos.videoList[this.videoIndex].seek;
+            this.bar.set('played', (this.video.currentTime + prevTime) / this.videos.duration, 'width');
+            const currentTime = utils.secondToTime(this.video.currentTime + prevTime);
             if (this.template.ptime.innerHTML !== currentTime) {
                 this.template.ptime.innerHTML = currentTime;
             }
@@ -492,6 +397,51 @@ class DPlayer {
                 this.subtitle.hide();
             }
         }
+    }
+
+    // TODO: use switchQuality
+    loadVideo (index, seek = 0) {
+        if (this.loadingVideo) {
+            return;
+        }
+        this.loadingVideo = true;
+        this.videoIndex = index;
+        this.video.pause();
+        this.paused = true;
+
+        this.container.classList.remove('dplayer-paused');
+        this.container.classList.add('dplayer-loading');
+
+        const videoHTML = tplVideo({
+            current: false,
+            pic: null,
+            screenshot: this.options.screenshot,
+            preload: 'auto',
+            url: this.videos.videoList[index].url,
+            subtitle: this.options.subtitle
+        });
+        const videoEle = new DOMParser().parseFromString(videoHTML, 'text/html').body.firstChild;
+        this.template.videoWrap.insertBefore(videoEle, this.template.videoWrap.getElementsByTagName('div')[0]);
+
+        this.prevVideo = this.video;
+        this.video = videoEle;
+        this.initVideo(this.video);
+
+        if (seek) {
+            this.video.currentTime = seek;
+        }
+
+        this.video.addEventListener('canplay', () => {
+            if (this.loadingVideo) {
+                this.template.videoWrap.removeChild(this.prevVideo);
+                this.video.classList.add('dplayer-video-current');
+                this.paused = false;
+                this.container.classList.remove('dplayer-loading');
+                this.video.play();
+                this.loadingVideo = false;
+                this.prevVideo = null;
+            }
+        });
     }
 
     switchQuality (index) {
@@ -517,6 +467,7 @@ class DPlayer {
         });
         const videoEle = new DOMParser().parseFromString(videoHTML, 'text/html').body.firstChild;
         this.template.videoWrap.insertBefore(videoEle, this.template.videoWrap.getElementsByTagName('div')[0]);
+        this.pause();
         this.prevVideo = this.video;
         this.video = videoEle;
         this.initVideo(this.video, this.quality.type || this.options.video.type);

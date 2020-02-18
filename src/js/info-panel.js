@@ -40,7 +40,7 @@ class InfoPanel {
         this.template.infoType.innerHTML = this.player.type;
         this.template.infoUrl.innerHTML = this.player.options.video.url;
         this.template.infoResolution.innerHTML = `${this.player.video.videoWidth} x ${this.player.video.videoHeight}`;
-        this.template.infoDuration.innerHTML = this.player.video.duration;
+        this.template.infoDuration.innerHTML = this.player.videos.duration;
         if (this.player.options.danmaku) {
             this.template.infoDanmakuId.innerHTML = this.player.options.danmaku.id;
             this.template.infoDanmakuApi.innerHTML = this.player.options.danmaku.api;

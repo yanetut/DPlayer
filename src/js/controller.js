@@ -26,7 +26,6 @@ class Controller {
         this.initThumbnails();
         this.initPlayedBar();
         this.initFullButton();
-        this.initQualityButton();
         this.initScreenshotButton();
         this.initSubtitleButton();
         this.initHighlights();
@@ -102,7 +101,7 @@ class Controller {
             percentage = Math.max(percentage, 0);
             percentage = Math.min(percentage, 1);
             this.player.bar.set('played', percentage, 'width');
-            this.player.template.ptime.innerHTML = utils.secondToTime(percentage * this.player.video.duration);
+            this.player.template.ptime.innerHTML = utils.secondToTime(percentage * this.player.videos.duration);
         };
 
         const thumbUp = (e) => {
@@ -112,7 +111,7 @@ class Controller {
             percentage = Math.max(percentage, 0);
             percentage = Math.min(percentage, 1);
             this.player.bar.set('played', percentage, 'width');
-            this.player.seek(this.player.bar.get('played') * this.player.video.duration);
+            this.player.seek(this.player.bar.get('played') * this.player.videos.duration);
             this.player.timer.enable('progress');
         };
 
@@ -123,13 +122,13 @@ class Controller {
         });
 
         this.player.template.playedBarWrap.addEventListener(utils.nameMap.dragMove, (e) => {
-            if (this.player.video.duration) {
+            if (this.player.videos.duration) {
                 const px = utils.cumulativeOffset(this.player.template.playedBarWrap).left;
                 const tx = (e.clientX || e.changedTouches[0].clientX) - px;
                 if (tx < 0 || tx > this.player.template.playedBarWrap.offsetWidth) {
                     return;
                 }
-                const time = this.player.video.duration * (tx / this.player.template.playedBarWrap.offsetWidth);
+                const time = this.player.videos.duration * (tx / this.player.template.playedBarWrap.offsetWidth);
                 if (utils.isMobile) {
                     this.thumbnails && this.thumbnails.show();
                 }
@@ -209,16 +208,6 @@ class Controller {
                 this.player.bar.set('volume', 0, 'width');
             }
         });
-    }
-
-    initQualityButton () {
-        if (this.player.options.video.quality) {
-            this.player.template.qualityList.addEventListener('click', (e) => {
-                if (e.target.classList.contains('dplayer-quality-item')) {
-                    this.player.switchQuality(e.target.dataset.index);
-                }
-            });
-        }
     }
 
     initScreenshotButton () {
