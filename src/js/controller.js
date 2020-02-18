@@ -27,7 +27,6 @@ class Controller {
         this.initPlayedBar();
         this.initFullButton();
         this.initScreenshotButton();
-        this.initSubtitleButton();
         this.initHighlights();
         if (!utils.isMobile) {
             this.initVolumeButton();
@@ -236,25 +235,6 @@ class Controller {
         }
     }
 
-    initSubtitleButton () {
-        if (this.player.options.subtitle) {
-            this.player.events.on('subtitle_show', () => {
-                this.player.template.subtitleButton.dataset.balloon = this.player.tran('Hide subtitle');
-                this.player.template.subtitleButtonInner.style.opacity = '';
-                this.player.user.set('subtitle', 1);
-            });
-            this.player.events.on('subtitle_hide', () => {
-                this.player.template.subtitleButton.dataset.balloon = this.player.tran('Show subtitle');
-                this.player.template.subtitleButtonInner.style.opacity = '0.4';
-                this.player.user.set('subtitle', 0);
-            });
-
-            this.player.template.subtitleButton.addEventListener('click', () => {
-                this.player.subtitle.toggle();
-            });
-        }
-    }
-
     setAutoHide () {
         this.show();
         clearTimeout(this.autoHideTimer);
@@ -271,8 +251,6 @@ class Controller {
 
     hide () {
         this.player.container.classList.add('dplayer-hide-controller');
-        this.player.setting.hide();
-        this.player.comment && this.player.comment.hide();
     }
 
     isShow () {

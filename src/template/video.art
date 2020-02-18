@@ -1,4 +1,3 @@
-{{ set enableSubtitle = subtitle && subtitle.type === 'webvtt' }}
 <video
     class="dplayer-video {{ if current }}dplayer-video-current{{ /if }}"
     webkit-playsinline
@@ -8,7 +7,4 @@
     {{ if preload }}preload="{{ preload }}"{{ /if }}
     {{ if url }}src="{{ url }}"{{ /if }}
     >
-    {{ if enableSubtitle }}
-    <track kind="metadata" default src="{{ subtitle.url }}"></track>
-    {{ /if }}
 </video>

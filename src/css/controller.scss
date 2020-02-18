@@ -16,14 +16,6 @@
     padding: 0 20px;
     user-select: none;
     transition: all 0.3s ease;
-    &.dplayer-controller-comment {
-        .dplayer-icons {
-            display: none;
-        }
-        .dplayer-icons.dplayer-comment-box {
-            display: block;
-        }
-    }
     .dplayer-bar-wrap {
         padding: 5px 0;
         cursor: pointer;
@@ -156,133 +148,6 @@
         height: 38px;
         position: absolute;
         bottom: 0;
-        &.dplayer-comment-box {
-            display: none;
-            position: absolute;
-            transition: all .3s ease-in-out;
-            z-index: 2;
-            height: 38px;
-            bottom: 0;
-            left: 20px;
-            right: 20px;
-            color: #fff;
-            .dplayer-icon {
-                padding: 7px;
-            }
-            .dplayer-comment-setting-icon {
-                position: absolute;
-                left: 0;
-                top: 0;
-            }
-            .dplayer-send-icon {
-                position: absolute;
-                right: 0;
-                top: 0;
-            }
-            .dplayer-comment-setting-box {
-                position: absolute;
-                background: rgba(28, 28, 28, 0.9);
-                bottom: 41px;
-                left: 0;
-                box-shadow: 0 0 25px rgba(0, 0, 0, .3);
-                border-radius: 4px;
-                padding: 10px 10px 16px;
-                font-size: 14px;
-                width: 204px;
-                transition: all .3s ease-in-out;
-                transform: scale(0);
-                &.dplayer-comment-setting-open {
-                    transform: scale(1);
-                }
-                input[type=radio] {
-                    display: none;
-                }
-                label {
-                    cursor: pointer;
-                }
-                .dplayer-comment-setting-title {
-                    font-size: 13px;
-                    color: #fff;
-                    line-height: 30px;
-                }
-                .dplayer-comment-setting-type {
-                    font-size: 0;
-                    .dplayer-comment-setting-title {
-                        margin-bottom: 6px;
-                    }
-                    label {
-                        &:nth-child(2) {
-                            span {
-                                border-radius: 4px 0 0 4px;
-                            }
-                        }
-                        &:nth-child(4) {
-                            span {
-                                border-radius: 0 4px 4px 0;
-                            }
-                        }
-                    }
-                    span {
-                        width: 33%;
-                        padding: 4px 6px;
-                        line-height: 16px;
-                        display: inline-block;
-                        font-size: 12px;
-                        color: #fff;
-                        border: 1px solid #fff;
-                        margin-right: -1px;
-                        box-sizing: border-box;
-                        text-align: center;
-                        cursor: pointer;
-                    }
-                    input:checked+span {
-                        background: #E4E4E6;
-                        color: #1c1c1c;
-                    }
-                }
-                .dplayer-comment-setting-color {
-                    font-size: 0;
-                    label {
-                        font-size: 0;
-                        padding: 6px;
-                        display: inline-block;
-                    }
-                    span {
-                        width: 22px;
-                        height: 22px;
-                        display: inline-block;
-                        border-radius: 50%;
-                        box-sizing: border-box;
-                        cursor: pointer;
-                        &:hover {
-                            animation: my-face 5s infinite ease-in-out;
-                        }
-                    }
-                }
-            }
-            .dplayer-comment-input {
-                outline: none;
-                border: none;
-                padding: 8px 31px;
-                font-size: 14px;
-                line-height: 18px;
-                text-align: center;
-                border-radius: 4px;
-                background: none;
-                margin: 0;
-                height: 100%;
-                box-sizing: border-box;
-                width: 100%;
-                color: #fff;
-                &::placeholder {
-                    color: #fff;
-                    opacity: 0.8;
-                }
-                &::-ms-clear {
-                    display: none;
-                }
-            }
-        }
         &.dplayer-icons-left {
             .dplayer-icon {
                 padding: 7px;
@@ -336,12 +201,6 @@
                 width: auto;
                 line-height: 22px;
                 font-size: 14px;
-            }
-            &.dplayer-comment-icon {
-                padding: 10px 9px 9px;
-            }
-            &.dplayer-setting-icon {
-                padding-top: 8.5px;
             }
             &.dplayer-volume-icon {
                 width: 43px;
@@ -399,121 +258,6 @@
                             cursor: pointer;
                             transition: all .3s ease-in-out;
                             transform: scale(0);
-                        }
-                    }
-                }
-            }
-        }
-        .dplayer-subtitle-btn {
-            display: inline-block;
-            height: 100%;
-        }
-        .dplayer-setting {
-            display: inline-block;
-            height: 100%;
-            .dplayer-setting-box {
-                position: absolute;
-                right: 0;
-                bottom: 50px;
-                transform: scale(0);
-                width: 150px;
-                border-radius: 2px;
-                background: rgba(28, 28, 28, 0.9);
-                padding: 7px 0;
-                transition: all .3s ease-in-out;
-                overflow: hidden;
-                z-index: 2;
-                &>div {
-                    display: none;
-                    &.dplayer-setting-origin-panel {
-                        display: block;
-                    }
-                }
-                &.dplayer-setting-box-open {
-                    transform: scale(1);
-                }
-                &.dplayer-setting-box-narrow {
-                    width: 70px;
-                    height: 180px;
-                    text-align: center;
-                }
-                &.dplayer-setting-box-speed {
-                    .dplayer-setting-origin-panel {
-                        display: none;
-                    }
-                    .dplayer-setting-speed-panel {
-                        display: block;
-                    }
-                }
-            }
-            .dplayer-setting-item,
-            .dplayer-setting-speed-item {
-                height: 30px;
-                padding: 5px 10px;
-                box-sizing: border-box;
-                cursor: pointer;
-                position: relative;
-                &:hover {
-                    background-color: rgba(255, 255, 255, .1);
-                }
-            }
-            .dplayer-setting-danmaku {
-                padding: 5px 0;
-                .dplayer-label {
-                    padding: 0 10px;
-                    display: inline;
-                }
-                &:hover {
-                    .dplayer-label {
-                        display: none;
-                    }
-                    .dplayer-danmaku-bar-wrap {
-                        display: inline-block;
-                    }
-                }
-                &.dplayer-setting-danmaku-active {
-                    .dplayer-label {
-                        display: none;
-                    }
-                    .dplayer-danmaku-bar-wrap {
-                        display: inline-block;
-                    }
-                }
-                .dplayer-danmaku-bar-wrap {
-                    padding: 0 10px;
-                    box-sizing: border-box;
-                    display: none;
-                    vertical-align: middle;
-                    height: 100%;
-                    width: 100%;
-                    .dplayer-danmaku-bar {
-                        position: relative;
-                        top: 8.5px;
-                        width: 100%;
-                        height: 3px;
-                        background: #fff;
-                        transition: all 0.3s ease-in-out;
-                        .dplayer-danmaku-bar-inner {
-                            position: absolute;
-                            bottom: 0;
-                            left: 0;
-                            height: 100%;
-                            transition: all 0.1s ease;
-                            background: #aaa;
-                            will-change: width;
-                            .dplayer-thumb {
-                                position: absolute;
-                                top: 0;
-                                right: 5px;
-                                margin-top: -4px;
-                                margin-right: -10px;
-                                height: 11px;
-                                width: 11px;
-                                border-radius: 50%;
-                                cursor: pointer;
-                                transition: all .3s ease-in-out;
-                                background: #aaa;
-                            }
                         }
                     }
                 }
@@ -577,10 +321,6 @@
                     background-color: rgba(255, 255, 255, .1);
                 }
             }
-        }
-        .dplayer-comment {
-            display: inline-block;
-            height: 100%;
         }
         .dplayer-label {
             color: #eee;

@@ -13,16 +13,14 @@ class Timer {
             }
         )();
 
-        this.types = ['loading', 'info', 'fps'];
+        this.types = ['loading', 'info'];
 
         this.init();
     }
 
     init () {
         this.types.map((item) => {
-            if (item !== 'fps') {
-                this[`init${item}Checker`]();
-            }
+            this[`init${item}Checker`]();
             return item;
         });
     }
@@ -52,31 +50,6 @@ class Timer {
         }, 100);
     }
 
-    initfpsChecker () {
-        window.requestAnimationFrame(() => {
-            if (this.enablefpsChecker) {
-                this.initfpsChecker();
-                if (!this.fpsStart) {
-                    this.fpsStart = new Date();
-                    this.fpsIndex = 0;
-                }
-                else {
-                    this.fpsIndex++;
-                    const fpsCurrent = new Date();
-                    if (fpsCurrent - this.fpsStart > 1000) {
-                        this.player.infoPanel.fps(this.fpsIndex / (fpsCurrent - this.fpsStart) * 1000);
-                        this.fpsStart = new Date();
-                        this.fpsIndex = 0;
-                    }
-                }
-            }
-            else {
-                this.fpsStart = 0;
-                this.fpsIndex = 0;
-            }
-        });
-    }
-
     initinfoChecker () {
         this.infoChecker = setInterval(() => {
             if (this.enableinfoChecker) {
@@ -87,10 +60,6 @@ class Timer {
 
     enable (type) {
         this[`enable${type}Checker`] = true;
-
-        if (type === 'fps') {
-            this.initfpsChecker();
-        }
     }
 
     disable (type) {
