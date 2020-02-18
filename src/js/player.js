@@ -57,7 +57,7 @@ class DPlayer {
         this.video = this.template.video;
 
         this.videos = this.options.videos;
-        this.videoIndex = 0;
+        this.videoIndex = -1;
 
         this.bar = new Bar(this.template);
 
@@ -129,6 +129,10 @@ class DPlayer {
      * Play video
      */
     play () {
+        if (this.videoIndex === -1) {
+            this.loadVideo(0);
+            return;
+        }
         this.paused = false;
         if (this.video.paused) {
             this.bezel.switch(Icons.play);
@@ -314,6 +318,7 @@ class DPlayer {
         this.videoIndex = index;
         this.video.pause();
         this.paused = true;
+        this.template.playButton.innerHTML = Icons.pause;
 
         this.container.classList.remove('dplayer-paused');
         this.container.classList.add('dplayer-loading');
