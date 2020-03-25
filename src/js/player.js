@@ -1,4 +1,5 @@
 import Promise from 'promise-polyfill';
+import dayjs from 'dayjs';
 
 import utils from './utils';
 import handleOption from './options';
@@ -56,7 +57,19 @@ class DPlayer {
 
         this.video = this.template.video;
 
-        this.videos = this.options.videos;
+        this.videos = this.options.videos.map(({timestamp, duration, url}, index) => {
+            const secondStart = (timestamp - this.options.videos[0].timestamp) / 1000;
+            const durationSecond = duration / 1000;
+            return {
+                index,
+                timestamp,
+                duration: durationSecond,
+                url,
+                secondStart,
+                secondEnd: secondStart + durationSecond
+            };
+        });
+
         this.videoIndex = -1;
 
         this.bar = new Bar(this.template);
@@ -64,6 +77,27 @@ class DPlayer {
         this.bezel = new Bezel(this.template.bezel);
 
         this.fullScreen = new FullScreen(this);
+
+        const videoLast = this.videos[this.videos.length - 1];
+        this.timeStart = this.videos[0].timestamp;
+        this.timeEnd = videoLast.timestamp + videoLast.duration * 1000;
+        this.duration =  Math.ceil((this.timeEnd - this.videos[0].timestamp) / 1000);
+
+        // init gaps
+        const deviationMs = this.options.gapDeviation || 3000;
+        this.gaps = this.videos && this.videos.reduce((acc, val, index) => {
+            if (index === 0) {
+                return acc;
+            }
+            const prevVideo = this.videos[index - 1];
+            const prevTimeEnd = prevVideo.timestamp + prevVideo.duration * 1000;
+            if (val.timestamp - prevTimeEnd > deviationMs) {
+                const timeStart = prevTimeEnd + 1;
+                const timeEnd = val.timestamp - 1;
+                return [...acc, {timeStart, timeEnd, secondStart: (timeStart - this.timeStart) / 1000, secondEnd: (timeEnd - this.timeStart) / 1000}];
+            }
+            return acc;
+        }, []);
 
         this.controller = new Controller(this);
 
@@ -82,8 +116,10 @@ class DPlayer {
 
         this.contextmenu = new ContextMenu(this);
 
-        this.initVideos(this.videos);
         this.initVideo(this.video);
+
+        this.template.ptime.innerHTML = dayjs(this.timeStart).format('HH:mm:ss');
+        this.template.dtime.innerHTML = dayjs(this.timeEnd).format('HH:mm:ss');
 
         if (this.options.autoplay) {
             this.loadVideo(0);
@@ -97,32 +133,35 @@ class DPlayer {
     * Seek video
     */
     seek (time) {
+        // time is second
         time = Math.max(time, 0);
-        if (this.videos.duration) {
-            time = Math.min(time, this.videos.duration);
-        }
-        if (this.video.currentTime < time) {
-            this.notice(`${this.tran('FF')} ${(time - this.video.currentTime).toFixed(0)} ${this.tran('s')}`);
-        }
-        else if (this.video.currentTime > time) {
-            this.notice(`${this.tran('REW')} ${(this.video.currentTime - time).toFixed(0)} ${this.tran('s')}`);
-        }
-
-        // TODO: algorithm
-        let seekVideoIndex = this.videos.videoList.findIndex((video) => video.seek > time);
-        if (seekVideoIndex === -1) {
-            seekVideoIndex = this.videos.videoList.length;
+        time = Math.min(time, this.duration);
+        // gap
+        const seekGap = this.gaps.find((gap) => time >= gap.secondStart && time <= gap.secondEnd);
+        if (seekGap) {
+            this.template.videoNoWrap.classList.add('shown');
+            this.pause();
+            return;
         }
 
-        const seekTimeInVideo = time - this.videos.videoList[seekVideoIndex - 1].seek;
-        if (seekVideoIndex - 1 === this.videoIndex) {
-            this.video.currentTime =  seekTimeInVideo;
-        } else {
-            this.loadVideo(seekVideoIndex - 1, seekTimeInVideo);
+        // video bar
+        const seekVideo = this.videos.find((video) => time >= video.secondStart && time <= video.secondEnd);
+        if (seekVideo) {
+            const seekTimeInVideo = time - seekVideo.secondStart;
+            this.bar.set('played', time / this.duration, 'width');
+            const currentTime = dayjs(seekVideo.timestamp).add(this.video.currentTime, 'second').format('HH:mm:ss');
+            this.template.ptime.innerHTML = currentTime;
+            if (this.videoIndex === seekVideo.index) {
+                this.video.currentTime =  seekTimeInVideo;
+                this.play();
+            } else {
+                this.loadVideo(seekVideo.index, seekTimeInVideo);
+            }
+            return;
         }
 
-        this.bar.set('played', time / this.videos.duration, 'width');
-        this.template.ptime.innerHTML = utils.secondToTime(time);
+        this.pause();
+
     }
 
     /**
@@ -139,6 +178,7 @@ class DPlayer {
         }
 
         this.template.playButton.innerHTML = Icons.pause;
+        this.template.videoNoWrap.classList.remove('shown');
 
         if (this.bar.get('played') > 0.999) {
             this.loadVideo(0);
@@ -248,10 +288,6 @@ class DPlayer {
         this.video.src = video.url;
     }
 
-    initVideos (videos) {
-        this.template.dtime.innerHTML = utils.secondToTime(videos.duration);
-    }
-
     initVideo (video) {
 
         /**
@@ -259,8 +295,8 @@ class DPlayer {
          */
         // show video loaded bar: to inform interested parties of progress downloading the media
         this.on('progress', () => {
-            const seeked = this.videos.videoList[this.videoIndex].seek;
-            const percentage = video.buffered.length ? (seeked +  video.buffered.end(video.buffered.length - 1)) / this.videos.duration : seeked / this.videos.duration;
+            const seeked = this.videos[this.videoIndex].secondStart;
+            const percentage = video.buffered.length ? (seeked +  video.buffered.end(video.buffered.length - 1)) / this.duration : seeked / this.duration;
             this.bar.set('loaded', percentage, 'width');
         });
 
@@ -275,7 +311,7 @@ class DPlayer {
 
         // single video end
         this.on('ended', () => {
-            if (this.videoIndex < this.videos.videoList.length - 1) {
+            if (this.videoIndex < this.videos.length - 1) {
                 this.loadVideo(this.videoIndex + 1);
             } else {
                 this.bar.set('played', 1, 'width');
@@ -295,9 +331,10 @@ class DPlayer {
         });
 
         this.on('timeupdate', () => {
-            const prevTime = this.videos.videoList[this.videoIndex].seek;
-            this.bar.set('played', (this.video.currentTime + prevTime) / this.videos.duration, 'width');
-            const currentTime = utils.secondToTime(this.video.currentTime + prevTime);
+            const prevTime = (this.videos[this.videoIndex].timestamp - this.timeStart) / 1000;
+            const prevTimestamp = this.videos[this.videoIndex].timestamp;
+            this.bar.set('played', (this.video.currentTime + prevTime) / this.duration, 'width');
+            const currentTime = dayjs(prevTimestamp).add(this.video.currentTime, 'second').format('HH:mm:ss');
             if (this.template.ptime.innerHTML !== currentTime) {
                 this.template.ptime.innerHTML = currentTime;
             }
@@ -321,6 +358,7 @@ class DPlayer {
         this.template.playButton.innerHTML = Icons.pause;
 
         this.container.classList.remove('dplayer-paused');
+        this.template.videoNoWrap.classList.remove('shown');
         this.container.classList.add('dplayer-loading');
 
         const videoHTML = tplVideo({
@@ -328,7 +366,7 @@ class DPlayer {
             pic: null,
             screenshot: this.options.screenshot,
             preload: 'auto',
-            url: this.videos.videoList[index].url,
+            url: this.videos[index].url,
         });
         const videoEle = new DOMParser().parseFromString(videoHTML, 'text/html').body.firstChild;
         this.template.videoWrap.insertBefore(videoEle, this.template.videoWrap.getElementsByTagName('div')[0]);
@@ -350,6 +388,7 @@ class DPlayer {
                 this.video.play();
                 this.loadingVideo = false;
                 this.prevVideo = null;
+                this.play();
             }
         });
     }

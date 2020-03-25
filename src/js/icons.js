@@ -11,6 +11,7 @@ import send from '../assets/send.svg';
 import pallette from '../assets/pallette.svg';
 import camera from '../assets/camera.svg';
 import loading from '../assets/loading.svg';
+import videoNo from '../assets/video-no.svg';
 
 const Icons = {
     play: play,
@@ -26,6 +27,7 @@ const Icons = {
     pallette: pallette,
     camera: camera,
     loading: loading,
+    videoNo: videoNo,
 };
 
 export default Icons;

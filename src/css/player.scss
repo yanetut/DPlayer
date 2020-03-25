@@ -124,6 +124,34 @@
             display: none;
         }
     }
+    .dplayer-video-no-wrap {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        opacity: 0;
+        display: none;
+        &.shown {
+            opacity: 0.8;
+            display: block;
+        }
+        .dplayer-video-no {
+            width: 50px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-50%);
+            text-align: center;
+            .dplayer-video-no-icon {
+                width: 50px;
+            }
+            .dplayer-video-no-text {
+                color: #eeeeee;
+            }
+        }
+    }
 }
 
 // To hide scroll bar, apply this class to <body>

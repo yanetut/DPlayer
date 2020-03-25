@@ -11,6 +11,12 @@
         <span class="diplayer-loading-icon">{{@ icons.loading }}</span>
     </div>
 </div>
+<div class="dplayer-video-no-wrap">
+    <div class="dplayer-video-no">
+        <div class="dplayer-video-no-icon">{{@ icons.videoNo }}</div>
+        <div class="dplayer-video-no-text">无视频</div>
+    </div>
+</div>
 <div class="dplayer-controller-mask"></div>
 <div class="dplayer-controller">
     <div class="dplayer-icons dplayer-icons-left">
@@ -30,8 +36,8 @@
             </div>
         </div>
         <span class="dplayer-time">
-            <span class="dplayer-ptime">0:00</span> /
-            <span class="dplayer-dtime">0:00</span>
+            <span class="dplayer-ptime"></span> -
+            <span class="dplayer-dtime"></span>
         </span>
         {{ if options.live }}
         <span class="dplayer-live-badge"><span class="dplayer-live-dot" style="background: {{ options.theme }};"></span>{{ tran('Live') }}</span>
@@ -53,7 +59,7 @@
         </div>
     </div>
     <div class="dplayer-bar-wrap">
-        <div class="dplayer-bar-time hidden">00:00</div>
+        <div class="dplayer-bar-time hidden">-</div>
         <div class="dplayer-bar-preview"></div>
         <div class="dplayer-bar">
             <div class="dplayer-loaded" style="width: 0;"></div>

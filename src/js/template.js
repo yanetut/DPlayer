@@ -52,6 +52,7 @@ class Template {
         this.barPreview = this.container.querySelector('.dplayer-bar-preview');
         this.barWrap = this.container.querySelector('.dplayer-bar-wrap');
         this.notice = this.container.querySelector('.dplayer-notice');
+        this.videoNoWrap = this.container.querySelector('.dplayer-video-no-wrap');
     }
 }
 

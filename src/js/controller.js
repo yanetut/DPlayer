@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import utils from './utils';
 import Thumbnails from './thumbnails';
 import Icons from './icons';
@@ -27,7 +28,8 @@ class Controller {
         this.initPlayedBar();
         this.initFullButton();
         this.initScreenshotButton();
-        this.initHighlights();
+        this.initGaps();
+        // this.initHighlights();
         if (!utils.isMobile) {
             this.initVolumeButton();
         }
@@ -56,6 +58,28 @@ class Controller {
         }
     }
 
+    initGaps () {
+        this.player.on('durationchange', () => {
+            if (this.player.video.duration !== 1 && this.player.video.duration !== Infinity) {
+                const gaps = document.querySelectorAll('.dplayer-gap');
+                [].slice.call(gaps, 0).forEach((item) => {
+                    this.player.template.playedBarWrap.removeChild(item);
+                });
+                this.player.gaps.forEach((gap) => {
+                    const p = document.createElement('div');
+                    p.classList.add('dplayer-gap');
+                    p.style.left =  (gap.timeStart - this.player.timeStart) / 1000 / this.player.duration * 100 + '%';
+                    p.style.width = (gap.timeEnd - gap.timeStart) / 1000 / this.player.duration * 100 + '%';
+                    const pt = document.createElement('div');
+                    pt.classList.add('dplayer-gap-text');
+                    pt.innerHTML = '无视频';
+                    p.appendChild(pt);
+                    this.player.template.playedBarWrap.insertBefore(p, this.player.template.playedBarTime);
+                });
+            }
+        });
+    }
+
     initHighlights () {
         this.player.on('durationchange', () => {
             if (this.player.video.duration !== 1 && this.player.video.duration !== Infinity) {
@@ -71,7 +95,7 @@ class Controller {
                         const p = document.createElement('div');
                         p.classList.add('dplayer-highlight');
                         p.style.left =  this.player.options.highlight[i].time / this.player.video.duration * 100 + '%';
-                        p.innerHTML = '<span class="dplayer-highlight-text">' + this.player.options.highlight[i].text + '</span>';
+                        p.innerHTML = '<div class="dplayer-highlight-text">' + this.player.options.highlight[i].text + '</div>';
                         this.player.template.playedBarWrap.insertBefore(p, this.player.template.playedBarTime);
                     }
                 }
@@ -100,7 +124,8 @@ class Controller {
             percentage = Math.max(percentage, 0);
             percentage = Math.min(percentage, 1);
             this.player.bar.set('played', percentage, 'width');
-            this.player.template.ptime.innerHTML = utils.secondToTime(percentage * this.player.videos.duration);
+            const currentTime = dayjs(this.player.timeStart).add(this.player.duration * percentage, 'second').format('HH:mm:ss');
+            this.player.template.ptime.innerHTML = currentTime;
         };
 
         const thumbUp = (e) => {
@@ -110,7 +135,7 @@ class Controller {
             percentage = Math.max(percentage, 0);
             percentage = Math.min(percentage, 1);
             this.player.bar.set('played', percentage, 'width');
-            this.player.seek(this.player.bar.get('played') * this.player.videos.duration);
+            this.player.seek(this.player.bar.get('played') * this.player.duration);
             this.player.timer.enable('progress');
         };
 
@@ -121,19 +146,19 @@ class Controller {
         });
 
         this.player.template.playedBarWrap.addEventListener(utils.nameMap.dragMove, (e) => {
-            if (this.player.videos.duration) {
+            if (this.player.duration) {
                 const px = utils.cumulativeOffset(this.player.template.playedBarWrap).left;
                 const tx = (e.clientX || e.changedTouches[0].clientX) - px;
                 if (tx < 0 || tx > this.player.template.playedBarWrap.offsetWidth) {
                     return;
                 }
-                const time = this.player.videos.duration * (tx / this.player.template.playedBarWrap.offsetWidth);
+                const time = this.player.duration * (tx / this.player.template.playedBarWrap.offsetWidth);
                 if (utils.isMobile) {
                     this.thumbnails && this.thumbnails.show();
                 }
                 this.thumbnails && this.thumbnails.move(tx);
-                this.player.template.playedBarTime.style.left = `${(tx - (time >= 3600 ? 25 : 20))}px`;
-                this.player.template.playedBarTime.innerText = utils.secondToTime(time);
+                this.player.template.playedBarTime.style.left = `${tx - 25}px`;
+                this.player.template.playedBarTime.innerText = dayjs(this.player.videos[0].timestamp + time * 1000).format('HH:mm:ss');
                 this.player.template.playedBarTime.classList.remove('hidden');
             }
         });
